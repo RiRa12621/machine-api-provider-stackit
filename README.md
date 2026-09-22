@@ -74,7 +74,7 @@ server name; cloud ownership must match the Machine UID and cluster label.
 
 ```sh
 make build
-podman build -t ghcr.io/rira12621/machine-api-provider-stackit:review .
+docker build -t ghcr.io/rira12621/machine-api-provider-stackit:review .
 ```
 
 Publish a reviewed image to your registry separately and configure MAO with its
