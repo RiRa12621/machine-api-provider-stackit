@@ -1,0 +1,38 @@
+name: Local validation
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.26.3'
+          cache: true
+      - name: Verify formatting and modules
+        run: |
+          make verify-fmt
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+      - name: Vet, race tests and build
+        run: make vet test build
+      - name: Lint
+        uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8
+        with:
+          version: v2.11.4
+          args: --modules-download-mode=readonly --timeout=10m
+      - name: Local Kubernetes lifecycle tests
+        run: |
+          make setup-envtest
+          export KUBEBUILDER_ASSETS="$PWD/.envtest/k8s/1.34.1-linux-amd64"
+          make test-envtest
